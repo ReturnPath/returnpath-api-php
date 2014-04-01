@@ -21,6 +21,7 @@ class ReturnPath
     protected $endPoint;
     protected $apiVersion;
     protected $lastResponse;
+    protected $product;
 
     /**
      * Instantiate a new object.
@@ -34,6 +35,7 @@ class ReturnPath
         $this->endPoint = 'api.returnpath.com';
         $this->apiVersion = 'v1';
         $this->lastResponse = null;
+        $this->product = null;
     }
 
     /**
@@ -44,6 +46,15 @@ class ReturnPath
     public function setEndPoint($endPoint)
     {
         $this->endPoint = $endPoint;
+        return true;
+    }
+
+    public function setProduct($product)
+    {
+        if (! in_array($product, array('ecm', 'im', 'preview', 'repmon'))) {
+            throw new InvalidArgumentException("Invalid product '$product'");
+        }
+        $this->product = $product;
         return true;
     }
 
@@ -72,28 +83,41 @@ class ReturnPath
         $this->saveHeaders = $yes;
     }
 
-    public function get($action = '', $parameters = null, $acceptableContentTypes = null)
+    public function get($action = '', $parameters = null, $product = null)
     {
-        return $this->_doCall('GET', $action, $parameters, $acceptableContentTypes);
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('GET', $action, $parameters);
     }
 
-    public function put($action, $parameters = null, $httpHeadersToSet = array())
+    public function put($action, $parameters = null, $product = null)
     {
-        return $this->_doCall('PUT', $action, $parameters, null, $httpHeadersToSet);
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('PUT', $action, $parameters);
     }
 
-    public function post($action = '', $parameters = null, $httpHeadersToSet = array())
+    public function post($action = '', $parameters = null, $product = null)
     {
-        return $this->_doCall('POST', $action, $parameters, null, $httpHeadersToSet);
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('POST', $action, $parameters);
     }
 
-    public function delete($action = '', $parameters = null)
+    public function delete($action = '', $parameters = null, $product = null)
     {
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
         return $this->_doCall('DELETE', $action, $parameters);
     }
 
-    protected function _doCall($httpMethod, $action, $parameters = null, $acceptableContentTypes = null, $httpHeadersToSet = array())
+    protected function _doCall($httpMethod, $action, $parameters = null, $product = null)
     {
+        $httpHeadersToSet = array();
         if (is_array($parameters)) {
             $newParams = '';
             foreach ($parameters as $key => $value) {
@@ -119,7 +143,7 @@ class ReturnPath
         if ($this->apiVersion != '') {
             $url .= $this->apiVersion . '/';
         }
-        $url .= $action;
+        $url .= (is_null($product) ? $this->product : $product) . "/$action";
         if ($httpMethod == 'GET') {
             $url .= '?' . $parameters;
         }
@@ -168,9 +192,7 @@ class ReturnPath
         $httpHeadersIn = ($this->saveHeaders) ? $this->responseHeaders : null;
         $httpHeadersOut = ($this->saveHeaders) ? preg_split('/(\\n|\\r){1,2}/', curl_getinfo($curl, CURLINFO_HEADER_OUT)) : null;
 
-        if (is_null($acceptableContentTypes)) {
-            $acceptableContentTypes = array('application/json');
-        }
+        $acceptableContentTypes = array('application/json');
         $response = new ReturnPathResponse(
             curl_getinfo($curl, CURLINFO_HTTP_CODE),
             $httpHeadersOut,
