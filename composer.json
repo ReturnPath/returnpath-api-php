@@ -1,0 +1,18 @@
+{
+    "name": "returnpath-php",
+    "description": "PHP Client Library for Return Path API",
+    "keywords": ["returnpath"],
+    "homepage": "http://api.returnpath.com/",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Dominik Gehl"
+	}
+    ],
+    "require": {
+        "php": ">=5.3.0"
+    },
+    "autoload": {
+        "classmap": ["class.returnpath.php"]
+    }
+}
