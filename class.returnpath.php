@@ -22,11 +22,13 @@ class ReturnPath
     protected $apiVersion;
     protected $lastResponse;
     protected $product;
+    protected $authenticationMethod;
+    protected $authenticationMethods = array('private', 'http_basic');
 
     /**
      * Instantiate a new object.
      */
-    function __construct($username, $password)
+    function __construct($username, $password, $authenticationMethod='http_basic')
     {
         $this->username = $username;
         $this->password = $password;
@@ -36,6 +38,10 @@ class ReturnPath
         $this->apiVersion = 'v1';
         $this->lastResponse = null;
         $this->product = null;
+        if (! in_array($authenticationMethod, $this->authenticationMethods)) {
+            throw new InvalidArgumentException("Invalid authentication method '$authenticationMethod''");
+        }
+        $this->authenticationMethod = $authenticationMethod;
     }
 
     /**
@@ -77,6 +83,13 @@ class ReturnPath
         return $this->lastResponse;
     }
 
+    protected function getPublicPrivateSignature($url)
+    {
+        $timestamp = time();
+        $path = parse_url($url, PHP_URL_PATH);
+        $hash = hash_hmac('sha256', "$path:$timestamp", $this->password, false);
+        return base64_encode($this->username . ":$hash:$timestamp");
+    }
 
     public function saveHeaders($yes = true)
     {
@@ -117,6 +130,20 @@ class ReturnPath
 
     protected function _doCall($httpMethod, $action, $parameters = null, $product = null)
     {
+        $url = 'http';
+        if ($this->ssl) {
+            $url = 'https';
+        }
+        $url .= '://' . $this->endPoint . '/';
+        if ($this->apiVersion != '') {
+            $url .= $this->apiVersion . '/';
+        }
+        $url .= (is_null($product) ? $this->product : $product) . "/$action";
+
+        if ($this->authenticationMethod == "private") {
+            $url .= '?' . "api_digest=" . $this->getPublicPrivateSignature($url);
+        }
+
         $httpHeadersToSet = array();
         if (is_array($parameters)) {
             $newParams = '';
@@ -134,25 +161,17 @@ class ReturnPath
             }
             $parameters = $newParams;
         }
-
-        $url = 'http';
-        if ($this->ssl) {
-            $url = 'https';
-        }
-        $url .= '://' . $this->endPoint . '/';
-        if ($this->apiVersion != '') {
-            $url .= $this->apiVersion . '/';
-        }
-        $url .= (is_null($product) ? $this->product : $product) . "/$action";
-        if ($httpMethod == 'GET') {
-            $url .= '?' . $parameters;
+        if (($httpMethod == 'GET') && ! is_null($parameters) && (count($parameters) > 0)) {
+            $url .= (($this->authenticationMethod == "private") ? '&' : '?') . $parameters;
         }
 
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_USERAGENT, 'Return Path API PHP');
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($curl, CURLOPT_USERPWD, $this->username . ':' . $this->password);
+        if ($this->authenticationMethod == "http_basic") {
+            curl_setopt($curl, CURLOPT_USERPWD, $this->username . ':');
+        }
         if ($this->ssl) {
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
         }
