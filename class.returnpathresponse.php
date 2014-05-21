@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Class to manage Return Path API responses
+ *
+ * Objects of this class will be created automatically
+ * from the ReturnPath object, when calling ->get(), ->put
+ * ->post or ->delete
+ *
+ * In most cases, you only need to use the ->getData() method
+ */
 class ReturnPathResponse
 {
 

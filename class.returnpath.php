@@ -2,12 +2,15 @@
 
 /**
  * Return Path API client library
+ *
+ * Please consult https://api.returnpath.com/docs/index.html
  */
 
 require_once dirname(__FILE__) . '/class.returnpathresponse.php';
 
 /**
  * Class to manage Return Path API access
+ *
  */
 class ReturnPath
 {
@@ -45,22 +48,92 @@ class ReturnPath
     }
 
     /**
-     * Specify the API endpoint.
-     * @param string $endPoint
+     * Specify the product.
+     * @param string $product
      * @return boolean success
      */
-    public function setEndPoint($endPoint)
-    {
-        $this->endPoint = $endPoint;
-        return true;
-    }
-
     public function setProduct($product)
     {
         if (! in_array($product, array('ecm', 'im', 'preview', 'repmon'))) {
             throw new InvalidArgumentException("Invalid product '$product'");
         }
         $this->product = $product;
+        return true;
+    }
+
+    /**
+     * Executes HTTP GET request
+     * @param string $action
+     * @param null $parameters - specify as associative array
+     * @param null $product
+     * @return bool|ReturnPathResponse
+     * @throws InvalidArgumentException
+     */
+    public function get($action = '', $parameters = null, $product = null)
+    {
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('GET', $action, $parameters);
+    }
+
+    /**
+     * Executes HTTP PUT request
+     * @param string $action
+     * @param null $parameters - specify as associative array
+     * @param null $product
+     * @return bool|ReturnPathResponse
+     * @throws InvalidArgumentException
+     */
+    public function put($action, $parameters = null, $product = null)
+    {
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('PUT', $action, $parameters);
+    }
+
+    /**
+     * Executes HTTP POST request
+     * @param string $action
+     * @param null $parameters - specify as associative array
+     * @param null $product
+     * @return bool|ReturnPathResponse
+     * @throws InvalidArgumentException
+     */
+    public function post($action = '', $parameters = null, $product = null)
+    {
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('POST', $action, $parameters);
+    }
+
+    /**
+     * Executes HTTP DELETE request
+     * @param string $action
+     * @param null $parameters - specify as associative array
+     * @param null $product
+     * @return bool|ReturnPathResponse
+     * @throws InvalidArgumentException
+     */
+    public function delete($action = '', $parameters = null, $product = null)
+    {
+        if (is_null($this->product) && is_null($product)) {
+            throw new InvalidArgumentException("you must specify a product");
+        }
+        return $this->_doCall('DELETE', $action, $parameters);
+    }
+
+    /**
+     * Specify the API endpoint.
+     * If setEndPoint isn't used, then api.returnpath.com is used by default
+     * @param string $endPoint
+     * @return boolean success
+     */
+    public function setEndPoint($endPoint)
+    {
+        $this->endPoint = $endPoint;
         return true;
     }
 
@@ -75,6 +148,16 @@ class ReturnPath
     }
 
     /**
+     * Specify whether or not you want to keep a trace of HTTP headers
+     * default is to not keep a trace of HTTP headers
+     * @param bool $yes Set to true to keep a trace of HTTP headers
+     */
+    public function saveHeaders($yes = true)
+    {
+        $this->saveHeaders = $yes;
+    }
+
+    /**
      * Returns the ReturnPathResponse object for the last API call.
      * @return ReturnPathResponse
      */
@@ -83,6 +166,11 @@ class ReturnPath
         return $this->lastResponse;
     }
 
+    /**
+     * Internal method returning the call signature
+     * @param $url
+     * @return string
+     */
     protected function getPublicPrivateSignature($url)
     {
         $timestamp = time();
@@ -91,43 +179,14 @@ class ReturnPath
         return base64_encode($this->username . ":$hash:$timestamp");
     }
 
-    public function saveHeaders($yes = true)
-    {
-        $this->saveHeaders = $yes;
-    }
-
-    public function get($action = '', $parameters = null, $product = null)
-    {
-        if (is_null($this->product) && is_null($product)) {
-            throw new InvalidArgumentException("you must specify a product");
-        }
-        return $this->_doCall('GET', $action, $parameters);
-    }
-
-    public function put($action, $parameters = null, $product = null)
-    {
-        if (is_null($this->product) && is_null($product)) {
-            throw new InvalidArgumentException("you must specify a product");
-        }
-        return $this->_doCall('PUT', $action, $parameters);
-    }
-
-    public function post($action = '', $parameters = null, $product = null)
-    {
-        if (is_null($this->product) && is_null($product)) {
-            throw new InvalidArgumentException("you must specify a product");
-        }
-        return $this->_doCall('POST', $action, $parameters);
-    }
-
-    public function delete($action = '', $parameters = null, $product = null)
-    {
-        if (is_null($this->product) && is_null($product)) {
-            throw new InvalidArgumentException("you must specify a product");
-        }
-        return $this->_doCall('DELETE', $action, $parameters);
-    }
-
+    /**
+     * Internal method handling HTTP request
+     * @param $httpMethod
+     * @param $action
+     * @param null $parameters
+     * @param null $product
+     * @return bool|ReturnPathResponse
+     */
     protected function _doCall($httpMethod, $action, $parameters = null, $product = null)
     {
         $url = 'http';
@@ -227,28 +286,16 @@ class ReturnPath
         return $response;
     }
 
+    /**
+     * Internal method used to build HTTP header trace
+     * @param $curl
+     * @param $headers
+     * @return int
+     */
     public function _setHeader($curl, $headers)
     {
         $this->responseHeaders[] = trim($headers, "\n\r");
         return strlen($headers);
-    }
-
-    protected function _filterParams($givenParams, $validParams, $requiredParams = array())
-    {
-        $filteredParams = array();
-        foreach ($givenParams as $name => $value) {
-            if (in_array(strtolower($name), $validParams)) {
-                $filteredParams[strtolower($name)] = $value;
-            } else {
-                return false;
-            }
-        }
-        foreach ($requiredParams as $name) {
-            if (!array_key_exists(strtolower($name), $filteredParams)) {
-                return false;
-            }
-        }
-        return $filteredParams;
     }
 
 }
