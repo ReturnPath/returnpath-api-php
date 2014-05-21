@@ -138,16 +138,6 @@ class ReturnPath
     }
 
     /**
-     * Specify whether or not API calls should be made over a secure connection.
-     * HTTPS is used on all calls by default.
-     * @param bool $sslOn Set to false to make calls over HTTP, true to use HTTPS
-     */
-    public function setSSL($sslOn = true)
-    {
-        $this->ssl = (is_bool($sslOn)) ? $sslOn : true;
-    }
-
-    /**
      * Specify whether or not you want to keep a trace of HTTP headers
      * default is to not keep a trace of HTTP headers
      * @param bool $yes Set to true to keep a trace of HTTP headers
