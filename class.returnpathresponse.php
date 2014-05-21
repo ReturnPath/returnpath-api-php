@@ -35,6 +35,82 @@ class ReturnPathResponse
         $this->_parseHeaders('request');
     }
 
+    /**
+     * Returns the response body parsed into a PHP structure. To get the JSON
+     * string, use getRawResponse()
+     * @return array
+     */
+    public function getData()
+    {
+        return $this->decodedResponse;
+    }
+
+    /**
+     * Returns the HTTP response code
+     * @return int
+     */
+    public function getHttpCode()
+    {
+        return $this->httpCode;
+    }
+
+    /**
+     * Does the response contain an error
+     * (for example HTTP code outside the 200-399 range)
+     * @return bool
+     */
+    public function hasError()
+    {
+        return $this->hasError;
+    }
+
+    /**
+     * Returns the raw HTTP response body
+     * In most cases this will be a json-encoded string
+     * To obtain a PHP structure, use getData() instead
+     * @return string
+     */
+    public function getRawResponse()
+    {
+        return $this->rawResponse;
+    }
+
+    /**
+     * Returns the raw HTTP response headers
+     * @return array
+     */
+    public function getRawResponseHeaders()
+    {
+        return $this->rawResponseHeaders;
+    }
+
+    /**
+     * Returns the parsed HTTP response headers
+     * @return array
+     */
+    public function getResponseHeaders()
+    {
+        return $this->headers['response'];
+    }
+
+    /**
+     * Returns the raw HTTP request headers
+     * @return array
+     */
+    public function getRawRequestHeaders()
+    {
+        return $this->rawRequestHeaders;
+    }
+
+    /**
+     * Returns the parsed HTTP request headers
+     * @return array
+     */
+    public function getRequestHeaders()
+    {
+        return $this->headers['request'];
+    }
+
     private function _parseHeaders($which = 'response')
     {
         $raw = ($which == 'response') ? $this->rawResponseHeaders : $this->rawRequestHeaders;
@@ -94,49 +170,6 @@ class ReturnPathResponse
         }
     }
 
-    public function getRawResponse()
-    {
-        return $this->rawResponse;
-    }
-
-    public function getRawResponseHeaders()
-    {
-        return $this->rawResponseHeaders;
-    }
-
-    public function getResponseHeaders()
-    {
-        return $this->headers['response'];
-    }
-
-    public function getRawRequestHeaders()
-    {
-        return $this->rawRequestHeaders;
-    }
-
-    public function getRequestHeaders()
-    {
-        return $this->headers['request'];
-    }
-
-    public function getHttpCode()
-    {
-        return $this->httpCode;
-    }
-
-    /**
-     * Returns the response body parsed into a PHP structure. To get the JSON
-     * string, use getRawResponse()
-     */
-    public function getData()
-    {
-        return $this->decodedResponse;
-    }
-
-    public function hasError()
-    {
-        return $this->hasError;
-    }
 }
 
 ?>
