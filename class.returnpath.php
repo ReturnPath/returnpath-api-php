@@ -54,7 +54,7 @@ class ReturnPath
      */
     public function setProduct($product)
     {
-        if (! in_array($product, array('ecm', 'im', 'preview', 'repmon'))) {
+        if (! in_array($product, array('cert', 'ecm', 'im', 'preview', 'repmon'))) {
             throw new InvalidArgumentException("Invalid product '$product'");
         }
         $this->product = $product;
