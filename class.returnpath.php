@@ -210,7 +210,7 @@ class ReturnPath
             }
             $parameters = $newParams;
         }
-        if (($httpMethod == 'GET') && ! is_null($parameters) && (count($parameters) > 0)) {
+        if (($httpMethod == 'GET') && ! is_null($parameters) && !empty($parameters)) {
             $url .= (($this->authenticationMethod == "private") ? '&' : '?') . $parameters;
         }
 
